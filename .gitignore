@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Environment
+.env
+.venv/
+env/
+venv/
+
+# MacOS
+.DS_Store
+
+# Logs and temp
+*.log
+*.sqlite3
+*.db
+
+# PyCharm & VSCode
+.idea/
+.vscode/
+
+# Model/weights/checkpoints
+*.pth
+*.pt
+*.h5
+
+# Flask cache
+instance/
+*.egg-info/
