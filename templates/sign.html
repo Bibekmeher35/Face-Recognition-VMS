@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register New Face</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="text-center mb-4">
+            <h2 class="text-bg-primary fs-3 py-3 px-4 rounded">Register New Person</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-6 bg-light p-4 rounded shadow">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="name" class="form-label fw-semibold">Name:</label>
+                        <input type="text" id="name" name="name" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label fw-semibold">Phone Number:</label>
+                        <input type="text" id="phone" name="phone" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="image" class="form-label fw-semibold">Upload Face Image:</label>
+                        <input type="file" id="image" name="image" class="form-control" accept="image/*">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Or Capture from Camera:</label><br>
+                        <button type="button" class="btn btn-sm btn-info mb-2" onclick="startCamera()">📷 Open Camera</button>
+                        <video id="video" width="100%" autoplay playsinline muted style="display:none;" class="mb-2 rounded border"></video>
+                        <button type="button" class="btn btn-warning" id="captureBtn" style="display:none;" onclick="captureMultiple()">📸 Capture Photos</button>
+                        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+                        <input type="hidden" name="captured_image1" id="captured_image1">
+                        <input type="hidden" name="captured_image2" id="captured_image2">
+                        <input type="hidden" name="captured_image3" id="captured_image3">
+                        <input type="hidden" name="captured_image4" id="captured_image4">
+                        <input type="hidden" name="captured_image5" id="captured_image5">
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-outline-primary">Register</button>
+                    </div>
+                </form>
+
+                {% if message %}
+                <div class="alert alert-success text-center mt-3">{{ message }}</div>
+                {% endif %}
+
+                <div class="text-center mt-3">
+                    <a href="/" class="btn btn-secondary">← Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>
+let videoStream;
+
+function startCamera() {
+    const video = document.getElementById('video');
+    const captureBtn = document.getElementById('captureBtn');
+
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+            videoStream = stream;
+            video.style.display = 'block';
+            captureBtn.style.display = 'inline-block';
+        })
+        .catch(error => {
+            console.error('Camera error:', error);
+            alert("⚠️ Unable to access camera. Please check permissions or use a secure (HTTPS) connection.");
+        });
+}
+
+function captureMultiple() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const totalCaptures = 5;
+    let count = 1;
+
+    // Clear previously captured values
+    for (let i = 1; i <= totalCaptures; i++) {
+        document.getElementById('captured_image' + i).value = '';
+        const oldPreview = document.getElementById('preview' + i);
+        if (oldPreview) oldPreview.remove();
+    }
+
+    const captureFrame = () => {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataURL = canvas.toDataURL('image/jpeg');
+        document.getElementById('captured_image' + count).value = dataURL;
+
+        // Show preview below camera
+        const img = document.createElement('img');
+        img.id = 'preview' + count;
+        img.src = dataURL;
+        img.width = 100;
+        img.style.marginRight = '10px';
+        document.querySelector('.mb-3').appendChild(img);
+
+        count++;
+        if (count <= totalCaptures) {
+            setTimeout(captureFrame, 1000); // capture every 1 second
+        }
+    };
+
+    captureFrame();
+}
+</script>
+<script>
+document.querySelector("form").addEventListener("submit", function (e) {
+    const fileInput = document.getElementById('image');
+    const capturedImage1 = document.getElementById('captured_image1').value;
+
+    if (!fileInput.value && !capturedImage1) {
+        e.preventDefault();
+        alert("⚠️ Please upload an image or capture one from the camera.");
+    }
+});
+</script>
+</body>
+</html>

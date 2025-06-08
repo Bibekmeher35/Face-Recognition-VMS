@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mark Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container text-center mt-4">
+        <h2>📷 Live Attendance Feed</h2>
+
+        <img src="{{ url_for('video_feed') }}" width="1000" class="img-fluid my-4"/>
+
+        <div class="d-grid gap-2 col-6 mx-auto mb-3">
+            <button id="markBtn" class="btn btn-success btn-lg">✅ Mark Attendance</button>
+        </div>
+        <p id="statusMsg" class="mt-3 text-success fw-bold"></p>
+
+        <div class="mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">⬅️ Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('markBtn').addEventListener('click', function () {
+            fetch('/mark-attendance', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('statusMsg').innerText = data.message;
+                })
+                .catch(error => {
+                    document.getElementById('statusMsg').innerText = "❌ Error marking attendance.";
+                });
+        });
+    </script>
+</body>
+</html>
