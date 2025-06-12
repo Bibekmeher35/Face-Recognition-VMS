@@ -24,6 +24,21 @@ logging.basicConfig(level=logging.INFO)
 unknown_face_labels = {}
 unknown_counter = 1
 
+# --- Unknown embeddings and names for embedding-based unknown matching ---
+unknown_embeddings = []
+unknown_names = []
+
+# Load or initialize unknown face labels
+if os.path.exists("unknown.csv"):
+    with open("unknown.csv", "r") as f:
+        for line in f.readlines()[1:]:
+            label, face_id = line.strip().split(',')
+            unknown_face_labels[face_id] = label
+            unknown_counter = max(unknown_counter, int(label.replace("unknown", "")) + 1)
+else:
+    with open("unknown.csv", "w") as f:
+        f.write("Label,FaceID\n")
+
 # 🔧 Flask Configuration Class
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'your_secret_key')
@@ -100,10 +115,17 @@ def handle_unknown_face(image, face_id, now):
     global unknown_counter
     try:
         # Assign a persistent label for this face_id
+        new_face = False
         if face_id not in unknown_face_labels:
             unknown_face_labels[face_id] = f"unknown{unknown_counter}"
             unknown_counter += 1
+            new_face = True
         label = unknown_face_labels[face_id]
+
+        # Save new unknown face entry to CSV
+        if new_face:
+            with open("unknown.csv", "a") as f:
+                f.write(f"{label},{face_id}\n")
 
         # Save snapshot
         if not os.path.exists("static/unknowns"):
@@ -153,8 +175,14 @@ def mark_attendance(name):
     if name not in df['Name'].values:
         now = datetime.now()
         time_now = now.strftime('%H:%M:%S')
-        phone = re.search(r'\b\d{10}\b', name)
-        phone = phone.group() if phone else "-"
+
+        # Default phone number as "-"
+        phone = "-"
+        if os.path.exists('users.csv'):
+            with open('users.csv', 'r') as f:
+                phone_dict = dict(line.strip().split(',') for line in f if ',' in line)
+                phone = phone_dict.get(name, "-")
+
         with open(f'Attendance/Attendance-{datetoday}.csv', 'a') as f:
             f.write(f"\n{name},{phone},{time_now}")
 
@@ -219,15 +247,21 @@ def gen_frames():
                     display_name = name.rsplit('_', 1)[0].replace('_', ' ')
                     label = f"{display_name} ({match_score:.2f})"
                 else:
-                    # Persistent label for unknown face
-                    face_id = f"{x1}_{y1}_{x2}_{y2}"
+                    # --- Embedding-based unknown matching ---
                     now = datetime.now()
-                    # Assign persistent label
-                    if face_id not in unknown_face_labels:
-                        unknown_face_labels[face_id] = f"unknown{unknown_counter}"
+                    match_scores = cosine_similarity([embedding], unknown_embeddings)[0] if unknown_embeddings else []
+                    best_match_idx = np.argmax(match_scores) if len(match_scores) > 0 else -1
+                    if len(match_scores) > 0 and match_scores[best_match_idx] > 0.5:
+                        label = unknown_names[best_match_idx]
+                    else:
+                        label = f"unknown{unknown_counter}"
                         unknown_counter += 1
-                    label = unknown_face_labels[face_id]
+                        unknown_embeddings.append(embedding)
+                        unknown_names.append(label)
+                        with open("unknown.csv", "a") as f:
+                            f.write(f"{label},{now.strftime('%Y-%m-%d %H:%M:%S')}\n")
                     # Avoid sending too many emails for the same unknown face label
+                    face_id = f"{x1}_{y1}_{x2}_{y2}"
                     alert_info = unknown_face_alerted.get(face_id)
                     alert_count = alert_info.get('count', 0) if alert_info else 0
                     last_alert_time = alert_info.get('time') if alert_info else None
@@ -507,7 +541,45 @@ def register():
         with open('users.csv', 'a') as f:
             f.write(f"{base_name}_{phone},{phone}\n")
 
+        # Remove from unknown.csv if registered
+        if os.path.exists("unknown.csv"):
+            with open("unknown.csv", "r") as f:
+                lines = f.readlines()
+
+            new_lines = [lines[0]]  # Keep header
+            # Remove any unknown label whose face_id is now registered
+            updated_labels = set(unknown_face_labels.values())
+            for line in lines[1:]:
+                label, face_id = line.strip().split(',')
+                # Remove if label refers to a now-registered user
+                # base_name is the registered user's base name
+                # Remove if label == unknownX for a face_id now handled, or if face_id in unknown_face_labels and unknown_face_labels[face_id] is now registered
+                if label not in known_names:
+                    new_lines.append(line)
+                else:
+                    # Remove label from tracking
+                    if face_id in unknown_face_labels:
+                        unknown_face_labels.pop(face_id)
+
+            with open("unknown.csv", "w") as f:
+                f.writelines(new_lines)
+
         message = "Registration successful."
+
+        # Remove from unknown.csv if registered
+        cleaned_unknowns = []
+        if os.path.exists("unknown.csv"):
+            with open("unknown.csv", "r") as f:
+                lines = f.readlines()
+            with open("unknown.csv", "w") as f:
+                f.write(lines[0])  # Write header
+                for line in lines[1:]:
+                    label, face_id = line.strip().split(',')
+                    if label not in known_names:
+                        f.write(line)
+                    else:
+                        unknown_face_labels.pop(face_id, None)
+
     return render_template('sign.html', message=message)
 
 
@@ -569,3 +641,4 @@ def login():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5050, host='0.0.0.0', use_reloader=False)
+
