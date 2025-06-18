@@ -1,6 +1,7 @@
 # 📁 Imports and Library Setup
 # Ensure the following packages are installed:
 # pip install ultralytics scikit-learn insightface torch opencv-python
+# "User login page Username:user and Password: user@123"
 import os
 import cv2
 import torch
