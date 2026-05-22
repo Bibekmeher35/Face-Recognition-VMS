@@ -59,12 +59,19 @@ A production-ready **Face Recognition Visitor Management System** designed for i
 
 <table>
   <tr>
-    <td><img src="demo/USER INTERFACE.jpeg" alt="Home Dashboard" width="400"/><br/><b>Home Dashboard</b></td>
-    <td><img src="demo/User Adding.jpeg" alt="User Registration" width="400"/><br/><b>User Registration</b></td>
+    <td><img src="demo/Home Page.png" alt="Home Dashboard" width="400"/><br/><b>Home Dashboard</b></td>
+    <td><img src="demo/User login page.png" alt="User Login" width="400"/><br/><b>User Login</b></td>
   </tr>
   <tr>
-    <td><img src="demo/Live Images Capturing.jpeg" alt="Live Capture" width="400"/><br/><b>Live Image Capture</b></td>
-    <td><img src="demo/CSV ATTENDANCE RECORD.jpeg" alt="Attendance Log" width="400"/><br/><b>Attendance Records</b></td>
+    <td><img src="demo/Register with open camera.png" alt="User Registration" width="400"/><br/><b>User Registration</b></td>
+    <td><img src="demo/Video Feed for Attendance.png" alt="Live Video Feed" width="400"/><br/><b>Live Video Feed</b></td>
+  </tr>
+  <tr>
+    <td><img src="demo/Take Attendance Button.png" alt="Take Attendance" width="400"/><br/><b>Take Attendance</b></td>
+    <td><img src="demo/Admin Dashboard.png" alt="Admin Dashboard" width="400"/><br/><b>Admin Dashboard</b></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="demo/Admin login page.png" alt="Admin Login" width="400"/><br/><b>Admin Login Page</b></td>
   </tr>
 </table>
 
