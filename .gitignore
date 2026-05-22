@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Environment variables
+.env
+*.env
+
+# Credentials & Tokens
+credentials.json
+token.json
+*.pem
+*.key
+
+# User Data (Privacy)
+static/faces/*/
+static/unknowns/
+static/admins/
+Attendance/*.csv
+users.csv
+encodings.pkl
+admin_logs.csv
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+Captured/
+
+# Model weights (optional - uncomment if models are large)
+# model/*.pth
+# *.pt

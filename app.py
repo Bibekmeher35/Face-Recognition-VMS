@@ -15,11 +15,14 @@ from insightface.app import FaceAnalysis
 import pickle
 import time
 from model.enhance_net_nopool import enhance_net_nopool
+import logging
 import smtplib
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import logging
+from dotenv import load_dotenv
+import warnings
+warnings.filterwarnings("ignore", message=".*rcond.*", category=FutureWarning)
 logging.basicConfig(level=logging.INFO)
 unknown_face_labels = {}
 unknown_counter = 1
@@ -28,7 +31,6 @@ unknown_counter = 1
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'your_secret_key')
     UPLOAD_FOLDER = 'static/faces'
-
 # 🚀 Initialize Flask App
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -44,7 +46,6 @@ if f'Attendance-{datetoday}.csv' not in os.listdir('Attendance'):
     with open(f'Attendance/Attendance-{datetoday}.csv', 'w') as f:
         f.write('Name,Phone,Time')
 
-# 🤖 Load YOLO and InsightFace Models
 # Load YOLOv8 model for face detection (optional, for bounding box)
 model = YOLO("yolov8n-face-lindevs.pt")
 
@@ -67,33 +68,35 @@ def enhance_image(img):
     enhanced = np.clip(enhanced * 255.0, 0, 255).astype(np.uint8)
     return cv2.cvtColor(enhanced, cv2.COLOR_RGB2BGR)
 
-# 📧 Utility function to send email alert for unknown face
+
+load_dotenv()
+
 def send_unknown_face_alert(image):
     sender_email = "bibekmeher35@gmail.com"
     receiver_email = "jayrudra896@gmail.com"
-    password = "relkwtvaccyetand"
+    password = os.getenv("FR_APP_PASSWORD")
+    if not password:
+        print("[Email Error] FR_APP_PASSWORD not found in environment")
+        return
 
     msg = MIMEMultipart()
     msg['Subject'] = 'Unknown Person Detected'
     msg['From'] = sender_email
     msg['To'] = receiver_email
+    msg.attach(MIMEText("An unknown person was detected."))
 
-    text = MIMEText("An unknown person was detected by the attendance system.")
-    msg.attach(text)
-
-    img_data = cv2.imencode('.jpg', image)[1].tobytes()
-    image_attachment = MIMEImage(img_data, name="unknown.jpg")
-    msg.attach(image_attachment)
+    _, buffer = cv2.imencode('.jpg', image)
+    msg.attach(MIMEImage(buffer.tobytes(), name="unknown.jpg"))
 
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(sender_email, password)
             server.send_message(msg)
-            # Keep print for email section as per instruction
-            print("[Email Sent] Unknown face alert sent successfully.")
+            print("[✅ Email Sent] Unknown face alert sent successfully.")
     except Exception as e:
-        # Keep print for email section as per instruction
-        print(f"[Email Error] Failed to send unknown face alert: {e}")
+        import traceback
+        print("[❌ Email Error]", e)
+        print(traceback.format_exc())
 
 # Utility function to handle unknown face: snapshot, alert, log
 def handle_unknown_face(image, face_id, now):
